@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Bubble Pop Game - A fun web-based game with progressive difficulty and sound effects">
+    <meta name="keywords" content="bubble game, web game, javascript game, popping bubbles">
+    <meta name="author" content="Bubble Game Developer">
+    
+    <title>Bubble Pop Game - Progressive Bubble Popping Fun</title>
+    
+    <!-- Favicon and app icons -->
+    <link rel="icon" type="image/x-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='%2387CEEB' stroke='%23fff' stroke-width='2'/></svg>">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="css/styles.css" as="style">
+    <link rel="preload" href="js/gamestate.js" as="script">
+    <link rel="preload" href="js/bubble.js" as="script">
+    <link rel="preload" href="js/audio.js" as="script">
+    <link rel="preload" href="js/game.js" as="script">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Open Graph meta tags for social sharing -->
+    <meta property="og:title" content="Bubble Pop Game">
+    <meta property="og:description" content="A fun web-based bubble popping game with progressive difficulty">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="">
+    
+    <!-- Twitter Card meta tags -->
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="Bubble Pop Game">
+    <meta name="twitter:description" content="A fun web-based bubble popping game">
+</head>
+<body>
+    <!-- Main game container -->
+    <div class="game-container">
+        <!-- Game header with score, timer, and level display -->
+        <header class="game-header" role="banner">
+            <div class="score-display" aria-label="Current Score">
+                Score: <span id="score" aria-live="polite">0</span>
+            </div>
+            <div class="timer-display" aria-label="Time Remaining">
+                Time: <span id="timer" aria-live="polite">30</span>s
+            </div>
+            <div class="level-display" aria-label="Current Level and Target">
+                Level: <span id="level" aria-live="polite">1</span> 
+                (Target: <span id="target" aria-live="polite">5</span>)
+            </div>
+        </header>
+        
+        <!-- Main game canvas -->
+        <main role="main">
+            <canvas 
+                id="gameCanvas" 
+                width="800" 
+                height="600"
+                aria-label="Game canvas - click on bubbles to pop them"
+                role="img">
+                Your browser does not support the HTML5 Canvas element required for this game.
+                Please update your browser or try a different one.
+            </canvas>
+        </main>
+        
+        <!-- Game control buttons -->
+        <section class="game-controls" role="region" aria-label="Game Controls">
+            <button 
+                id="startButton" 
+                class="start-button" 
+                type="button"
+                aria-label="Start new game">
+                Start Game
+            </button>
+            <button 
+                id="restartButton" 
+                class="restart-button" 
+                type="button"
+                style="display: none;"
+                aria-label="Restart current game">
+                Restart Game
+            </button>
+        </section>
+        
+        <!-- Game information and instructions -->
+        <section class="game-info" role="region" aria-label="Game Instructions">
+            <h2 style="margin-bottom: 10px; font-size: 18px; color: #FFD700;">How to Play</h2>
+            <p><strong>Objective:</strong> Click on bubbles to pop them before they fall off the screen!</p>
+            <p><strong>Scoring:</strong> Regular bubbles = 1 point | <strong style="color: #FFD700;">Gold bubbles = 5 points</strong></p>
+            <p><strong>Level Up:</strong> Reach the target score to advance to the next level with faster bubbles!</p>
+            <p><strong>Controls:</strong> 
+                <kbd>Click</kbd> = Pop bubbles | 
+                <kbd>Space</kbd> = Start game | 
+                <kbd>Ctrl+R</kbd> = Restart | 
+                <kbd>M</kbd> = Toggle sound
+            </p>
+        </section>
+        
+        <!-- Accessibility information -->
+        <section class="accessibility-info" style="font-size: 12px; opacity: 0.7; margin-top: 10px; text-align: center;">
+            <p>This game requires mouse/touch input and includes sound effects. 
+            Visual indicators show score and progress for accessibility.</p>
+        </section>
+    </div>
+    
+    <!-- Loading indicator (hidden by default) -->
+    <div id="loadingIndicator" class="loading-indicator" style="display: none;" aria-hidden="true">
+        <div>Loading game...</div>
+    </div>
+    
+    <!-- Error message container -->
+    <div id="errorContainer" class="error-container" style="display: none;" role="alert" aria-live="assertive">
+        <div id="errorMessage"></div>
+        <button onclick="location.reload()" style="margin-top: 10px; padding: 5px 15px;">Reload Game</button>
+    </div>
+    
+    <!-- No-script fallback -->
+    <noscript>
+        <div style="text-align: center; padding: 50px; color: white; background: rgba(255, 0, 0, 0.8); margin: 20px; border-radius: 10px;">
+            <h2>JavaScript Required</h2>
+            <p>This game requires JavaScript to be enabled in your browser.</p>
+            <p>Please enable JavaScript and refresh the page to play.</p>
+        </div>
+    </noscript>
+    
+    <!-- JavaScript files - loaded in dependency order -->
+    <script src="js/gamestate.js" defer></script>
+    <script src="js/bubble.js" defer></script>
+    <script src="js/audio.js" defer></script>
+    <script src="js/game.js" defer></script>
+    
+    <!-- Analytics and error tracking (placeholder) -->
+    <script>
+        // Global error handler for debugging
+        window.addEventListener('error', function(event) {
+            console.error('Global error caught:', event.error);
+            
+            // Show user-friendly error message
+            const errorContainer = document.getElementById('errorContainer');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            if (errorContainer && errorMessage) {
+                errorMessage.textContent = 'An error occurred. Please try refreshing the page.';
+                errorContainer.style.display = 'block';
+            }
+        });
+        
+        // Performance monitoring
+        window.addEventListener('load', function() {
+            if ('performance' in window) {
+                const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+                console.log(`Page load time: ${loadTime}ms`);
+            }
+        });
+        
+        // Basic analytics tracking (placeholder)
+        function trackEvent(action, category, label) {
+            console.log(`Analytics: ${category} - ${action} - ${label}`);
+            // Could integrate with Google Analytics, etc.
+        }
+        
+        // Make analytics available globally
+        window.trackEvent = trackEvent;
+    </script>
+</body>
+</html>

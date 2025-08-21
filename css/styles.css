@@ -1,0 +1,244 @@
+/* 
+ * Bubble Pop Game - Main Stylesheet
+ * Modern glassmorphism design with responsive elements
+ */
+
+/* Global Styles and Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: white;
+    user-select: none; /* Prevent text selection during gameplay */
+}
+
+/* Main Game Container */
+.game-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 900px;
+    width: 100%;
+}
+
+/* Game Header with Score/Timer/Level Display */
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.score-display, .timer-display, .level-display {
+    font-size: 16px;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 10px 20px;
+    border-radius: 25px;
+    text-align: center;
+    min-width: 120px;
+    transition: all 0.3s ease;
+}
+
+.score-display:hover, .timer-display:hover, .level-display:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Game Canvas Styling */
+canvas {
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: linear-gradient(to bottom, #87CEEB 0%, #E0F6FF 50%, #87CEEB 100%);
+    cursor: crosshair;
+    display: block;
+    margin: 0 auto;
+    transition: box-shadow 0.3s ease;
+}
+
+canvas:hover {
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+}
+
+/* Game Control Buttons */
+.game-controls {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.start-button, .restart-button {
+    background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 5px;
+    outline: none;
+}
+
+.start-button:hover, .restart-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(45deg, #FF5252, #26A69A);
+}
+
+.start-button:active, .restart-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Game Information Panel */
+.game-info {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.8;
+    line-height: 1.6;
+}
+
+.game-info strong {
+    color: #FFD700;
+}
+
+/* Level Complete Overlay */
+.level-complete {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(45deg, #4CAF50, #8BC34A);
+    color: white;
+    padding: 25px 45px;
+    border-radius: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: levelPulse 2s ease-in-out;
+}
+
+/* Game Over Overlay */
+.game-over {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(45deg, #F44336, #E91E63);
+    color: white;
+    padding: 25px 45px;
+    border-radius: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    text-align: center;
+    z-index: 1000;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    animation: gameOverShake 0.5s ease-in-out;
+}
+
+/* Animation Keyframes */
+@keyframes levelPulse {
+    0%, 100% { 
+        transform: translate(-50%, -50%) scale(1); 
+        opacity: 0.9;
+    }
+    50% { 
+        transform: translate(-50%, -50%) scale(1.1); 
+        opacity: 1;
+    }
+}
+
+@keyframes gameOverShake {
+    0%, 100% { transform: translate(-50%, -50%) translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translate(-50%, -50%) translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translate(-50%, -50%) translateX(5px); }
+}
+
+@keyframes scoreUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: #FFD700; }
+    100% { transform: scale(1); }
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    body {
+        padding: 10px;
+    }
+    
+    .game-container {
+        padding: 15px;
+    }
+    
+    .game-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    canvas {
+        width: 100%;
+        height: auto;
+        max-width: 800px;
+    }
+    
+    .score-display, .timer-display, .level-display {
+        font-size: 14px;
+        padding: 8px 16px;
+        min-width: 100px;
+    }
+}
+
+@media (max-width: 600px) {
+    .level-complete, .game-over {
+        font-size: 20px;
+        padding: 20px 30px;
+    }
+    
+    .game-info {
+        font-size: 12px;
+    }
+}
+
+/* Utility Classes */
+.hidden {
+    display: none !important;
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.score-animate {
+    animation: scoreUpdate 0.3s ease-in-out;
+}
+
+/* Loading State */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}

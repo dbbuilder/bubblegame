@@ -1,0 +1,78 @@
+# Bubble Pop Game - Git Ignore File
+
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Editor and IDE Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# Node.js (if we add build tools later)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build and Distribution
+dist/
+build/
+*.min.js
+*.min.css
+
+# Logs
+*.log
+logs/
+
+# Temporary Files
+tmp/
+temp/
+.tmp
+
+# Environment Variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Testing
+coverage/
+.nyc_output/
+.jest/
+
+# Deployment
+deploy.sh
+.deploy/
+
+# Archive Files
+*.zip
+*.tar.gz
+*.rar
+
+# Backup Files
+*.bak
+*.backup
+*~
+
+# Cache Directories
+.cache/
+.parcel-cache/
+
+# Documentation Build
+docs/_build/
+
+# Keep empty directories with .gitkeep
+!**/.gitkeep
