@@ -60,7 +60,7 @@ function initializeGame() {
         // Initial UI update
         updateUI();
         
-        console.log('🎮 Bubble Game v2.1 - Enhanced gentle female voice & mobile optimized');
+        console.log('🎮 Bubble Game v2.2 - Fixed speech synthesis & full-screen mobile');
         console.log('Game initialization completed successfully');
         console.log(`Canvas size: ${canvas.width}x${canvas.height}`);
         
@@ -83,12 +83,15 @@ function setupCanvasSize() {
         let canvasWidth, canvasHeight;
         
         if (window.innerWidth <= 600) {
-            // Mobile: use most of screen width with 16:9 aspect ratio
-            canvasWidth = Math.min(containerWidth - 20, window.innerWidth - 30);
-            canvasHeight = Math.round(canvasWidth * 0.75); // 4:3 aspect ratio for mobile
+            // Mobile: use almost full screen width, considering safe areas
+            canvasWidth = Math.min(containerWidth - 10, window.innerWidth - 15);
+            canvasHeight = Math.min(
+                Math.round(canvasWidth * 0.75), // 4:3 aspect ratio
+                window.innerHeight - 180 // Leave room for UI elements
+            );
         } else if (window.innerWidth <= 900) {
-            // Tablet: slightly larger with same aspect ratio
-            canvasWidth = Math.min(containerWidth - 40, 600);
+            // Tablet: larger canvas for better experience
+            canvasWidth = Math.min(containerWidth - 20, 700);
             canvasHeight = Math.round(canvasWidth * 0.75);
         } else {
             // Desktop: original size or scaled

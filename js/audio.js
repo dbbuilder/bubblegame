@@ -213,48 +213,26 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance with lowercase to avoid "Capital F" issue
-            const speechText = letter.toLowerCase();
+            // Create speech utterance - try multiple approaches to avoid beeping
+            const speechText = letter.toUpperCase(); // Back to uppercase - some engines handle this better
             const utterance = new SpeechSynthesisUtterance(speechText);
             
-            // Configure speech parameters for gentle, clear pronunciation
-            utterance.rate = 0.8; // Slower for gentleness and clarity
-            utterance.pitch = 1.1; // Slightly higher pitch for softer sound
-            utterance.volume = 0.8; // Slightly quieter for gentleness
+            // Configure speech parameters for clear pronunciation and compatibility
+            utterance.rate = 1.0; // Normal rate - some engines have issues with slower rates
+            utterance.pitch = 1.0; // Normal pitch for better compatibility
+            utterance.volume = 0.9; // Nearly full volume for clarity
             
-            // Enhanced voice selection for gentle female voices
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            // Simplified voice selection for reliability
+            const voices = speechSynthesis.getVoices();
             let preferredVoice = null;
             
-            // Look for female voices with gentle characteristics
-            const femaleVoiceKeywords = ['female', 'woman', 'samantha', 'alex', 'victoria', 'karen', 'susan', 'allison', 'ava', 'susan', 'veena', 'tessa'];
-            const gentleVoiceKeywords = ['premium', 'enhanced', 'natural', 'neural'];
-            
-            if (isIOS) {
-                // iOS: look for specific gentle female voices
+            if (voices.length > 0) {
+                // Try to find a good English voice - prioritize local voices for reliability
                 preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && 
-                    femaleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword))
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.default
-                ) || voices.find(voice => 
-                    voice.localService && voice.lang.startsWith('en')
-                );
-            } else {
-                // Android/Desktop: prefer female Google voices or other gentle options
-                preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && 
-                    (voice.name.toLowerCase().includes('female') || 
-                     voice.name.toLowerCase().includes('woman') ||
-                     femaleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword)))
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.localService &&
-                    gentleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword))
-                ) || voices.find(voice => 
                     voice.lang.startsWith('en') && voice.localService
                 ) || voices.find(voice => 
                     voice.lang.startsWith('en')
-                );
+                ) || voices[0]; // Fallback to any voice
             }
             
             if (preferredVoice) {
@@ -264,19 +242,19 @@ class AudioManager {
                 console.log('Using default voice');
             }
             
-            // Enhanced error handling for mobile
+            // Error handling for speech synthesis
             utterance.onerror = (event) => {
                 console.error('Speech synthesis error:', event.error);
-                // iOS fallback: try again with different voice
-                if (isIOS && event.error === 'not-allowed') {
-                    console.log('Retrying speech synthesis for iOS...');
+                // Simple fallback: try again with basic settings
+                if (event.error === 'not-allowed' || event.error === 'interrupted') {
+                    console.log('Retrying speech synthesis with basic settings...');
                     setTimeout(() => {
-                        const fallbackUtterance = new SpeechSynthesisUtterance(letter.toLowerCase());
-                        fallbackUtterance.rate = 0.8;
-                        fallbackUtterance.pitch = 1.1;
-                        fallbackUtterance.volume = 0.8;
+                        const fallbackUtterance = new SpeechSynthesisUtterance(letter);
+                        fallbackUtterance.rate = 1.0;
+                        fallbackUtterance.pitch = 1.0;
+                        fallbackUtterance.volume = 1.0;
                         speechSynthesis.speak(fallbackUtterance);
-                    }, 100);
+                    }, 200);
                 }
             };
             
@@ -288,14 +266,17 @@ class AudioManager {
                 console.log(`Started announcing: ${letter}`);
             };
             
-            // Cancel any ongoing speech (iOS safe)
-            if (speechSynthesis.speaking) {
-                speechSynthesis.cancel();
-                // Wait briefly before speaking on iOS
-                setTimeout(() => speechSynthesis.speak(utterance), isIOS ? 50 : 0);
-            } else {
-                speechSynthesis.speak(utterance);
-            }
+            // Cancel any ongoing speech and speak new utterance
+            speechSynthesis.cancel();
+            
+            // Brief delay to ensure cancel completes, then speak
+            setTimeout(() => {
+                try {
+                    speechSynthesis.speak(utterance);
+                } catch (error) {
+                    console.error('Error speaking utterance:', error);
+                }
+            }, 100);
             
         } catch (error) {
             console.error('Error announcing letter:', error);
