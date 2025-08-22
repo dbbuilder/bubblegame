@@ -60,6 +60,7 @@ function initializeGame() {
         // Initial UI update
         updateUI();
         
+        console.log('🎮 Bubble Game v2.1 - Enhanced gentle female voice & mobile optimized');
         console.log('Game initialization completed successfully');
         console.log(`Canvas size: ${canvas.width}x${canvas.height}`);
         
