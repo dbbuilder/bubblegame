@@ -26,14 +26,14 @@
     <meta http-equiv="Expires" content="0">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="css/styles.css?v=2.9" as="style">
-    <link rel="preload" href="js/gamestate.js?v=2.9" as="script">
-    <link rel="preload" href="js/bubble.js?v=2.9" as="script">
-    <link rel="preload" href="js/audio.js?v=2.9" as="script">
-    <link rel="preload" href="js/game.js?v=2.9" as="script">
+    <link rel="preload" href="css/styles.css?v=2.10" as="style">
+    <link rel="preload" href="js/gamestate.js?v=2.10" as="script">
+    <link rel="preload" href="js/bubble.js?v=2.10" as="script">
+    <link rel="preload" href="js/audio.js?v=2.10" as="script">
+    <link rel="preload" href="js/game.js?v=2.10" as="script">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/styles.css?v=2.9">
+    <link rel="stylesheet" href="css/styles.css?v=2.10">
     
     <!-- Open Graph meta tags for social sharing -->
     <meta property="og:title" content="Bubble Pop Game">
@@ -47,11 +47,52 @@
     <meta name="twitter:description" content="A fun web-based bubble popping game">
 </head>
 <body>
+    <!-- Audio Setup Screen -->
+    <div id="audioSetupScreen" class="setup-screen" style="display: block;">
+        <div class="setup-content">
+            <h1 style="color: #FFD700; margin-bottom: 20px;">🎮 Bubble Pop Game</h1>
+            <p style="font-size: 18px; margin-bottom: 20px;">Get ready to pop bubbles and learn letters!</p>
+            
+            <div class="setup-info" style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; margin-bottom: 20px;">
+                <h2 style="color: #87CEEB; margin-bottom: 15px;">🎵 Audio Setup Required</h2>
+                <p style="margin-bottom: 10px;">This game uses speech to announce letters when you pop bubbles.</p>
+                <p style="margin-bottom: 10px;"><strong>Tap the button below to enable audio and start playing!</strong></p>
+                <p style="font-size: 14px; opacity: 0.8;">This step ensures letters are spoken clearly on all devices.</p>
+            </div>
+            
+            <button id="enableAudioButton" class="setup-button" style="
+                background: linear-gradient(45deg, #4CAF50, #45a049);
+                color: white;
+                border: none;
+                padding: 15px 30px;
+                font-size: 18px;
+                border-radius: 25px;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+                transition: all 0.3s ease;
+                margin-bottom: 20px;
+            ">
+                🔊 Enable Audio & Start Game
+            </button>
+            
+            <div id="audioTestStatus" style="display: none; margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+                <p id="testMessage">Testing audio...</p>
+                <div id="testProgress" style="background: #333; height: 6px; border-radius: 3px; margin-top: 10px;">
+                    <div id="progressBar" style="background: #4CAF50; height: 100%; width: 0%; border-radius: 3px; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+            
+            <p style="font-size: 12px; opacity: 0.7; margin-top: 20px;">
+                v2.10 - Enhanced Audio Setup for Chrome iOS
+            </p>
+        </div>
+    </div>
+
     <!-- Main game container -->
-    <div class="game-container">
+    <div class="game-container" id="gameContainer" style="display: none;">
         <!-- Version indicator -->
         <div style="text-align: center; margin-bottom: 10px; color: #FFD700; font-weight: bold; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 5px 10px; font-size: 14px;">
-            🎮 Bubble Game v2.9 - Phonetic Speech for Chrome iOS Compatibility
+            🎮 Bubble Game v2.10 - Audio Setup & Chrome iOS Compatibility
         </div>
 
         <!-- Game header with score, timer, and level display -->
@@ -119,7 +160,7 @@
             <p>This game requires mouse/touch input and includes sound effects and speech synthesis. 
             Visual indicators show score and progress. Letters are announced when bubbles are popped.</p>
             <p style="font-size: 10px; margin-top: 5px; color: #FFD700;">
-                🎵 v2.9 - Phonetic Speech: Chrome iOS compatibility with phonetic pronunciations (F = "eff", A = "ay") • 
+                🎵 v2.10 - Audio Setup: Required user interaction to properly initialize speech synthesis • 
                 <span id="refresh-hint" style="cursor: pointer;" onclick="location.reload(true)">
                     Click here to refresh if needed
                 </span>
@@ -148,11 +189,156 @@
     </noscript>
     
     <!-- JavaScript files - loaded in dependency order with cache busting -->
-    <script src="js/gamestate.js?v=2.9" defer></script>
-    <script src="js/bubble.js?v=2.9" defer></script>
-    <script src="js/audio.js?v=2.9" defer></script>
-    <script src="js/game.js?v=2.9" defer></script>
+    <script src="js/gamestate.js?v=2.10" defer></script>
+    <script src="js/bubble.js?v=2.10" defer></script>
+    <script src="js/audio.js?v=2.10" defer></script>
+    <script src="js/game.js?v=2.10" defer></script>
     
+    <!-- Audio Setup Handler -->
+    <script>
+        // Audio setup functionality
+        window.audioSetupHandler = {
+            async setupAudio() {
+                const button = document.getElementById('enableAudioButton');
+                const statusDiv = document.getElementById('audioTestStatus');
+                const messageEl = document.getElementById('testMessage');
+                const progressBar = document.getElementById('progressBar');
+                
+                // Show loading state
+                button.disabled = true;
+                button.innerHTML = '🔄 Setting up audio...';
+                statusDiv.style.display = 'block';
+                
+                try {
+                    // Test speech synthesis with user interaction
+                    await this.testSpeechSynthesis(messageEl, progressBar);
+                    
+                    // If successful, hide setup screen and show game
+                    setTimeout(() => {
+                        document.getElementById('audioSetupScreen').style.display = 'none';
+                        document.getElementById('gameContainer').style.display = 'block';
+                        
+                        // Initialize game if AudioManager is available
+                        if (window.audioManager) {
+                            window.audioManager.initialized = true;
+                            console.log('✅ Audio setup complete, game ready to start');
+                        }
+                    }, 1000);
+                    
+                } catch (error) {
+                    console.error('Audio setup failed:', error);
+                    messageEl.textContent = 'Audio setup failed, but you can still play!';
+                    button.innerHTML = '⚠️ Continue Without Audio';
+                    button.onclick = () => {
+                        document.getElementById('audioSetupScreen').style.display = 'none';
+                        document.getElementById('gameContainer').style.display = 'block';
+                    };
+                    button.disabled = false;
+                }
+            },
+            
+            async testSpeechSynthesis(messageEl, progressBar) {
+                return new Promise((resolve, reject) => {
+                    try {
+                        messageEl.textContent = 'Testing speech synthesis...';
+                        progressBar.style.width = '20%';
+                        
+                        // Wait for voices to load
+                        const waitForVoices = () => {
+                            const voices = speechSynthesis.getVoices();
+                            if (voices.length > 0) {
+                                this.testVoicePlayback(messageEl, progressBar, resolve, reject);
+                            } else {
+                                setTimeout(waitForVoices, 100);
+                            }
+                        };
+                        
+                        // Check if voices are already loaded
+                        const voices = speechSynthesis.getVoices();
+                        if (voices.length > 0) {
+                            this.testVoicePlayback(messageEl, progressBar, resolve, reject);
+                        } else {
+                            // Wait for voices to load
+                            speechSynthesis.addEventListener('voiceschanged', waitForVoices, { once: true });
+                            setTimeout(waitForVoices, 500); // Fallback timeout
+                        }
+                        
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            },
+            
+            testVoicePlayback(messageEl, progressBar, resolve, reject) {
+                try {
+                    messageEl.textContent = 'Testing letter pronunciation...';
+                    progressBar.style.width = '60%';
+                    
+                    // Create test utterance
+                    const testText = 'ay'; // Test with phonetic "A"
+                    const utterance = new SpeechSynthesisUtterance(testText);
+                    utterance.rate = 0.8;
+                    utterance.pitch = 1.0;
+                    utterance.volume = 1.0;
+                    
+                    // Find good voice
+                    const voices = speechSynthesis.getVoices();
+                    const preferredVoice = voices.find(v => v.lang.startsWith('en') && v.localService) || 
+                                         voices.find(v => v.lang.startsWith('en')) || 
+                                         voices[0];
+                    
+                    if (preferredVoice) {
+                        utterance.voice = preferredVoice;
+                        console.log(`Testing with voice: ${preferredVoice.name}`);
+                    }
+                    
+                    utterance.onend = () => {
+                        messageEl.textContent = '✅ Audio setup successful!';
+                        progressBar.style.width = '100%';
+                        console.log('✅ Speech synthesis test successful');
+                        resolve();
+                    };
+                    
+                    utterance.onerror = (event) => {
+                        console.warn('Speech test error:', event.error);
+                        messageEl.textContent = '⚠️ Audio may not work perfectly';
+                        progressBar.style.width = '100%';
+                        resolve(); // Continue anyway
+                    };
+                    
+                    // Cancel any ongoing speech and speak test
+                    speechSynthesis.cancel();
+                    setTimeout(() => {
+                        speechSynthesis.speak(utterance);
+                    }, 100);
+                    
+                    // Timeout fallback
+                    setTimeout(() => {
+                        if (!utterance.onend.called) {
+                            console.log('Speech test timed out, but continuing');
+                            messageEl.textContent = '⚠️ Audio test timed out, continuing...';
+                            progressBar.style.width = '100%';
+                            resolve();
+                        }
+                    }, 3000);
+                    
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        };
+        
+        // Set up event listener when DOM loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const enableButton = document.getElementById('enableAudioButton');
+            if (enableButton) {
+                enableButton.addEventListener('click', () => {
+                    window.audioSetupHandler.setupAudio();
+                });
+            }
+        });
+    </script>
+
     <!-- Analytics and error tracking (placeholder) -->
     <script>
         // Global error handler for debugging

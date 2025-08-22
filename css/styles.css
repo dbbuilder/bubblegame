@@ -29,6 +29,44 @@ body {
     overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
+/* Audio Setup Screen Styles */
+.setup-screen {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    padding: 20px;
+}
+
+.setup-content {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    width: 100%;
+}
+
+.setup-button {
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.setup-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4) !important;
+}
+
+.setup-button:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3) !important;
+}
+
 /* Main Game Container */
 .game-container {
     background: rgba(255, 255, 255, 0.1);
