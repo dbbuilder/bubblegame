@@ -75,22 +75,27 @@ function initializeGame() {
  */
 function setupCanvasSize() {
     try {
-        // Get container size
-        const container = canvas.parentElement;
-        const containerWidth = container.clientWidth;
-        
-        // Calculate canvas size based on screen and container
+        // Calculate canvas size based on screen type
         let canvasWidth, canvasHeight;
         
-        if (window.innerWidth <= 600) {
-            // Mobile: use almost full screen width, considering safe areas
-            canvasWidth = Math.min(containerWidth - 10, window.innerWidth - 15);
-            canvasHeight = Math.min(
-                Math.round(canvasWidth * 0.75), // 4:3 aspect ratio
-                window.innerHeight - 180 // Leave room for UI elements
-            );
+        if (window.innerWidth <= 768) {
+            // Mobile: Full screen canvas
+            canvasWidth = window.innerWidth;
+            canvasHeight = window.innerHeight;
+            
+            // Use dynamic viewport height if available
+            if (window.visualViewport) {
+                canvasHeight = window.visualViewport.height;
+            } else if (window.innerHeight < screen.height) {
+                // Try to detect if address bar is present
+                canvasHeight = screen.height;
+            }
+            
+            console.log(`Mobile full-screen canvas: ${canvasWidth}x${canvasHeight}`);
         } else if (window.innerWidth <= 900) {
             // Tablet: larger canvas for better experience
+            const container = canvas.parentElement;
+            const containerWidth = container ? container.clientWidth : window.innerWidth;
             canvasWidth = Math.min(containerWidth - 20, 700);
             canvasHeight = Math.round(canvasWidth * 0.75);
         } else {
@@ -99,9 +104,11 @@ function setupCanvasSize() {
             canvasHeight = 600;
         }
         
-        // Ensure minimum size for playability
-        canvasWidth = Math.max(canvasWidth, 300);
-        canvasHeight = Math.max(canvasHeight, 225);
+        // Ensure minimum size for playability (except mobile full-screen)
+        if (window.innerWidth > 768) {
+            canvasWidth = Math.max(canvasWidth, 300);
+            canvasHeight = Math.max(canvasHeight, 225);
+        }
         
         // Set canvas internal dimensions
         canvas.width = canvasWidth;
