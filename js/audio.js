@@ -328,7 +328,7 @@ class AudioManager {
             const utterance = new SpeechSynthesisUtterance(speechText);
             
             // Configure speech parameters - child-friendly settings
-            utterance.rate = 0.7; // Much slower for young children
+            utterance.rate = 0.5; // Extra slow for clear pronunciation for 3-year-olds
             utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0; // Full volume
             
@@ -517,7 +517,7 @@ class AudioManager {
             // Create speech utterance with lowercase to avoid "capital"
             const speechText = letter.toLowerCase();
             const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.rate = 0.7; // Much slower for young children
+            utterance.rate = 0.5; // Extra slow for clear pronunciation for 3-year-olds
             utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
             
@@ -628,7 +628,7 @@ class AudioManager {
             console.log(`🗣️ Speaking phonetic for ${letter}: "${phoneticText}"`);
             
             const utterance = new SpeechSynthesisUtterance(phoneticText);
-            utterance.rate = 0.7; // Much slower for young children
+            utterance.rate = 0.5; // Extra slow for clear pronunciation for 3-year-olds
             utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
             
@@ -692,7 +692,7 @@ class AudioManager {
             console.log(`Using basic speech synthesis for letter: ${letter}`);
             
             const utterance = new SpeechSynthesisUtterance(letter.toLowerCase());
-            utterance.rate = 0.7; // Much slower for young children
+            utterance.rate = 0.5; // Extra slow for clear pronunciation for 3-year-olds
             utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
             
