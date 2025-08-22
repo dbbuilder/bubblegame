@@ -213,8 +213,9 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance - try multiple approaches to avoid beeping
-            const speechText = letter.toUpperCase(); // Back to uppercase - some engines handle this better
+            // Create speech utterance - use context to avoid beeping issues
+            const speechText = `${letter.toUpperCase()}`;
+            console.log(`Attempting to speak: "${speechText}"`);
             const utterance = new SpeechSynthesisUtterance(speechText);
             
             // Configure speech parameters for clear pronunciation and compatibility
@@ -236,9 +237,15 @@ class AudioManager {
             
             if (preferredVoice) {
                 utterance.voice = preferredVoice;
-                console.log(`Using voice: ${preferredVoice.name} (${preferredVoice.lang})`);
+                console.log(`🗣️  Using voice: ${preferredVoice.name} (${preferredVoice.lang}) - Local: ${preferredVoice.localService}`);
             } else {
-                console.log('Using default voice');
+                console.log('⚠️  Using default voice - no preferred voice found');
+                console.log(`Available voices: ${voices.length}`);
+                if (voices.length > 0) {
+                    voices.slice(0, 3).forEach((v, i) => {
+                        console.log(`  ${i}: ${v.name} (${v.lang}) - Local: ${v.localService}`);
+                    });
+                }
             }
             
             // Error handling for speech synthesis
@@ -258,11 +265,15 @@ class AudioManager {
             };
             
             utterance.onend = () => {
-                console.log(`Finished announcing: ${letter}`);
+                console.log(`✅ Speech finished: ${speechText}`);
             };
             
             utterance.onstart = () => {
-                console.log(`Started announcing: ${letter}`);
+                console.log(`🎵 Speech started: ${speechText}`);
+            };
+            
+            utterance.onboundary = (event) => {
+                console.log(`📍 Speech boundary: ${event.name} at ${event.charIndex}`);
             };
             
             // Cancel any ongoing speech and speak new utterance
