@@ -327,21 +327,16 @@ class AudioManager {
             
             const utterance = new SpeechSynthesisUtterance(speechText);
             
-            // Configure speech parameters - simple approach that was working
-            utterance.rate = 1.0; // Normal rate
-            utterance.pitch = 1.0; // Normal pitch  
+            // Configure speech parameters - child-friendly settings
+            utterance.rate = 0.7; // Much slower for young children
+            utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0; // Full volume
             
-            // Simplified voice selection for reliability
+            // Find best child-friendly voice
             let preferredVoice = null;
             
             if (voices.length > 0) {
-                // Simple voice selection - find any good English voice
-                preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.localService
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en')
-                ) || voices[0]; // Fallback to any voice
+                preferredVoice = this.findChildFriendlyVoice(voices);
             }
             
             if (preferredVoice) {
@@ -522,17 +517,13 @@ class AudioManager {
             // Create speech utterance with lowercase to avoid "capital"
             const speechText = letter.toLowerCase();
             const utterance = new SpeechSynthesisUtterance(speechText);
-            utterance.rate = 0.9; // Slightly slower for clarity
-            utterance.pitch = 1.1; // Slightly higher pitch for child-friendly sound
+            utterance.rate = 0.7; // Much slower for young children
+            utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
             
-            // Find best voice
+            // Find best child-friendly voice (prefer female voices)
             const voices = speechSynthesis.getVoices();
-            const preferredVoice = voices.find(voice => 
-                voice.lang.startsWith('en') && voice.localService
-            ) || voices.find(voice => 
-                voice.lang.startsWith('en')
-            ) || voices[0];
+            const preferredVoice = this.findChildFriendlyVoice(voices);
             
             if (preferredVoice) {
                 utterance.voice = preferredVoice;
@@ -637,17 +628,13 @@ class AudioManager {
             console.log(`🗣️ Speaking phonetic for ${letter}: "${phoneticText}"`);
             
             const utterance = new SpeechSynthesisUtterance(phoneticText);
-            utterance.rate = 0.8; // Slightly slower for clarity
-            utterance.pitch = 1.0;
+            utterance.rate = 0.7; // Much slower for young children
+            utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
             
-            // Find best voice for phonetic speech
+            // Find best child-friendly voice for phonetic speech
             const voices = speechSynthesis.getVoices();
-            const preferredVoice = voices.find(voice => 
-                voice.lang.startsWith('en') && voice.localService
-            ) || voices.find(voice => 
-                voice.lang.startsWith('en')
-            ) || voices[0];
+            const preferredVoice = this.findChildFriendlyVoice(voices);
             
             if (preferredVoice) {
                 utterance.voice = preferredVoice;
@@ -705,9 +692,16 @@ class AudioManager {
             console.log(`Using basic speech synthesis for letter: ${letter}`);
             
             const utterance = new SpeechSynthesisUtterance(letter.toLowerCase());
-            utterance.rate = 1.0;
-            utterance.pitch = 1.0;
+            utterance.rate = 0.7; // Much slower for young children
+            utterance.pitch = 1.3; // Higher pitch for gentle, child-friendly sound
             utterance.volume = 1.0;
+            
+            // Try to use child-friendly voice even in fallback
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = this.findChildFriendlyVoice(voices);
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+            }
             
             speechSynthesis.cancel();
             
@@ -786,6 +780,79 @@ class AudioManager {
             masterVolume: this.masterVolume,
             sampleRate: this.audioContext ? this.audioContext.sampleRate : 0
         };
+    }
+
+    /**
+     * Find the most child-friendly voice available
+     * @param {SpeechSynthesisVoice[]} voices - Available voices
+     * @returns {SpeechSynthesisVoice|null} Best child-friendly voice
+     */
+    findChildFriendlyVoice(voices) {
+        if (!voices || voices.length === 0) return null;
+        
+        // Priority order for child-friendly voices
+        const childFriendlyPatterns = [
+            // Female voices are often more child-friendly
+            { pattern: /female|woman|girl/i, priority: 10 },
+            // Specific child-friendly voice names
+            { pattern: /child|kid|young/i, priority: 15 },
+            // High quality local voices
+            { pattern: /premium|enhanced|natural/i, priority: 8 },
+            // Common gentle female voice names
+            { pattern: /samantha|susan|victoria|karen|anna|emma/i, priority: 12 },
+            // Google's female voices
+            { pattern: /google.*female/i, priority: 9 },
+            // Microsoft's gentle voices
+            { pattern: /zira|hazel|helena/i, priority: 11 }
+        ];
+        
+        let bestVoice = null;
+        let bestScore = 0;
+        
+        voices.forEach(voice => {
+            if (!voice.lang.startsWith('en')) return; // Only English voices
+            
+            let score = 0;
+            
+            // Prefer local voices
+            if (voice.localService) score += 5;
+            
+            // Check against child-friendly patterns
+            const voiceName = voice.name.toLowerCase();
+            childFriendlyPatterns.forEach(({ pattern, priority }) => {
+                if (pattern.test(voiceName)) {
+                    score += priority;
+                }
+            });
+            
+            // Prefer US/UK English
+            if (voice.lang.includes('US') || voice.lang.includes('GB')) {
+                score += 3;
+            }
+            
+            // Log voice evaluation for debugging
+            if (score > 0) {
+                console.log(`🎭 Voice candidate: ${voice.name} (${voice.lang}) - Score: ${score} - Local: ${voice.localService}`);
+            }
+            
+            if (score > bestScore) {
+                bestScore = score;
+                bestVoice = voice;
+            }
+        });
+        
+        // Fallback to any decent English voice if no child-friendly voice found
+        if (!bestVoice) {
+            bestVoice = voices.find(v => v.lang.startsWith('en') && v.localService) ||
+                      voices.find(v => v.lang.startsWith('en')) ||
+                      voices[0];
+        }
+        
+        if (bestVoice) {
+            console.log(`👶 Selected child-friendly voice: ${bestVoice.name} (${bestVoice.lang}) - Score: ${bestScore}`);
+        }
+        
+        return bestVoice;
     }
 
     /**
