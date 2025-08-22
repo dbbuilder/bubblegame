@@ -12,7 +12,15 @@ class AudioManager {
         this.soundQueue = []; // Queue for sound effects
         this.speechEnabled = 'speechSynthesis' in window; // Check for speech support
         this.voicesLoaded = false;
+        
+        // Audio file caching system
+        this.letterAudioCache = new Map(); // Cache for preloaded letter audio
+        this.audioFilesEnabled = true; // Prefer audio files over speech synthesis
+        this.audioFilesLoaded = false;
+        this.letterAudioBaseUrl = 'https://ssl.gstatic.com/dictionary/static/sounds/20220808/'; // Google's letter sounds
+        
         this.setupSpeechSynthesis();
+        this.preloadLetterAudioFiles();
         
         // Sound configuration
         this.sounds = {
@@ -61,6 +69,72 @@ class AudioManager {
                 this.voicesLoaded = true;
             }
         }, 1000);
+    }
+
+    /**
+     * Preload letter pronunciation audio files for reliable mobile playback
+     */
+    async preloadLetterAudioFiles() {
+        try {
+            console.log('Preloading letter audio files...');
+            
+            // Define letter audio mappings - using phonetic file names
+            const letterMappings = {
+                'A': 'a--_us_1.mp3', 'B': 'b--_us_1.mp3', 'C': 'c--_us_1.mp3', 'D': 'd--_us_1.mp3',
+                'E': 'e--_us_1.mp3', 'F': 'f--_us_1.mp3', 'G': 'g--_us_1.mp3', 'H': 'h--_us_1.mp3',
+                'I': 'i--_us_1.mp3', 'J': 'j--_us_1.mp3', 'K': 'k--_us_1.mp3', 'L': 'l--_us_1.mp3',
+                'M': 'm--_us_1.mp3', 'N': 'n--_us_1.mp3', 'O': 'o--_us_1.mp3', 'P': 'p--_us_1.mp3',
+                'Q': 'q--_us_1.mp3', 'R': 'r--_us_1.mp3', 'S': 's--_us_1.mp3', 'T': 't--_us_1.mp3',
+                'U': 'u--_us_1.mp3', 'V': 'v--_us_1.mp3', 'W': 'w--_us_1.mp3', 'X': 'x--_us_1.mp3',
+                'Y': 'y--_us_1.mp3', 'Z': 'z--_us_1.mp3'
+            };
+            
+            // Load each letter audio file
+            const loadPromises = Object.entries(letterMappings).map(async ([letter, filename]) => {
+                try {
+                    const audio = new Audio();
+                    audio.preload = 'auto';
+                    audio.crossOrigin = 'anonymous';
+                    
+                    // Set up promise to resolve when audio is loaded
+                    return new Promise((resolve, reject) => {
+                        audio.addEventListener('canplaythrough', () => {
+                            this.letterAudioCache.set(letter, audio);
+                            console.log(`✅ Loaded audio for letter: ${letter}`);
+                            resolve();
+                        });
+                        
+                        audio.addEventListener('error', (e) => {
+                            console.warn(`⚠️ Failed to load audio for letter ${letter}:`, e);
+                            resolve(); // Don't reject, just continue without this file
+                        });
+                        
+                        // Try to load the audio file
+                        audio.src = `${this.letterAudioBaseUrl}${filename}`;
+                    });
+                } catch (error) {
+                    console.warn(`Error setting up audio for letter ${letter}:`, error);
+                }
+            });
+            
+            // Wait for all files to load (or fail)
+            await Promise.all(loadPromises);
+            
+            const loadedCount = this.letterAudioCache.size;
+            console.log(`🎵 Letter audio preloading complete: ${loadedCount}/26 files loaded`);
+            
+            // Mark as loaded if we got at least some files
+            this.audioFilesLoaded = loadedCount > 0;
+            
+            if (loadedCount === 0) {
+                console.warn('No letter audio files loaded, will fall back to speech synthesis');
+                this.audioFilesEnabled = false;
+            }
+            
+        } catch (error) {
+            console.error('Error preloading letter audio files:', error);
+            this.audioFilesEnabled = false;
+        }
     }
 
     /**
@@ -187,23 +261,30 @@ class AudioManager {
     }
 
     /**
-     * Announce letter name using speech synthesis
+     * Announce letter name using cached audio files or speech synthesis fallback
      * @param {string} letter - Letter to announce
      */
     announceLetter(letter) {
         try {
-            if (!this.speechEnabled) {
-                console.warn('Speech synthesis not supported');
-                return;
-            }
-            
             // Skip if muted
             if (this.masterVolume === 0) {
-                console.log('Audio muted, skipping speech');
+                console.log('Audio muted, skipping letter announcement');
                 return;
             }
             
             console.log(`Announcing letter: ${letter}`);
+            
+            // Try cached audio files first (more reliable on mobile)
+            if (this.audioFilesEnabled && this.letterAudioCache.has(letter.toUpperCase())) {
+                this.playLetterAudioFile(letter.toUpperCase());
+                return;
+            }
+            
+            // Fallback to speech synthesis
+            if (!this.speechEnabled) {
+                console.warn('Speech synthesis not supported and no audio file available');
+                return;
+            }
             
             // iOS workaround: Check if voices are loaded
             let voices = speechSynthesis.getVoices();
@@ -213,9 +294,21 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance - back to simple approach that was working
-            const speechText = letter.toUpperCase(); // This was working in the first version!
-            console.log(`Attempting to speak: "${speechText}"`);
+            // Create speech utterance - Chrome iOS needs sentence context
+            const isChrome = navigator.userAgent.includes('Chrome');
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            
+            let speechText;
+            if (isChrome && isIOS) {
+                // Chrome on iOS - use full sentence approach to force speech
+                speechText = `The letter ${letter.toUpperCase()}`;
+                console.log(`Chrome iOS - Speaking sentence: "${speechText}"`);
+            } else {
+                // Other browsers - direct letter
+                speechText = letter.toUpperCase();
+                console.log(`Other browser - Speaking letter: "${speechText}"`);
+            }
+            
             const utterance = new SpeechSynthesisUtterance(speechText);
             
             // Configure speech parameters - simple approach that was working
@@ -291,6 +384,77 @@ class AudioManager {
             
         } catch (error) {
             console.error('Error announcing letter:', error);
+        }
+    }
+
+    /**
+     * Play letter pronunciation from cached audio file
+     * @param {string} letter - Letter to play (A-Z)
+     */
+    playLetterAudioFile(letter) {
+        try {
+            const audio = this.letterAudioCache.get(letter);
+            if (!audio) {
+                console.warn(`No cached audio file for letter: ${letter}`);
+                return;
+            }
+            
+            console.log(`🎵 Playing audio file for letter: ${letter}`);
+            
+            // Reset audio to beginning and play
+            audio.currentTime = 0;
+            audio.volume = this.masterVolume;
+            
+            // Create a clone to allow overlapping sounds
+            const audioClone = audio.cloneNode();
+            audioClone.volume = this.masterVolume;
+            
+            // Play the cloned audio
+            const playPromise = audioClone.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(() => {
+                    console.log(`✅ Successfully played audio for letter: ${letter}`);
+                }).catch(error => {
+                    console.warn(`Failed to play audio for letter ${letter}:`, error);
+                    // Fallback to speech synthesis if audio fails
+                    console.log('Falling back to speech synthesis...');
+                    this.fallbackToSpeechSynthesis(letter);
+                });
+            }
+            
+        } catch (error) {
+            console.error('Error playing letter audio file:', error);
+            // Fallback to speech synthesis if audio fails
+            this.fallbackToSpeechSynthesis(letter);
+        }
+    }
+
+    /**
+     * Fallback to speech synthesis when audio files fail
+     * @param {string} letter - Letter to announce via speech
+     */
+    fallbackToSpeechSynthesis(letter) {
+        try {
+            if (!this.speechEnabled) {
+                console.warn('Speech synthesis not available for fallback');
+                return;
+            }
+            
+            console.log(`Using speech synthesis fallback for letter: ${letter}`);
+            
+            const utterance = new SpeechSynthesisUtterance(letter.toUpperCase());
+            utterance.rate = 1.0;
+            utterance.pitch = 1.0;
+            utterance.volume = 1.0;
+            
+            speechSynthesis.cancel();
+            setTimeout(() => {
+                speechSynthesis.speak(utterance);
+            }, 100);
+            
+        } catch (error) {
+            console.error('Error in speech synthesis fallback:', error);
         }
     }
 
