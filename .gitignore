@@ -76,3 +76,4 @@ docs/_build/
 
 # Keep empty directories with .gitkeep
 !**/.gitkeep
+.vercel

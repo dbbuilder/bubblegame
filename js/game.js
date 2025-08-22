@@ -38,6 +38,9 @@ function initializeGame() {
             throw new Error('Failed to get canvas or rendering context');
         }
         
+        // Set up responsive canvas sizing
+        setupCanvasSize();
+        
         // Get UI elements
         scoreElement = document.getElementById('score');
         timerElement = document.getElementById('timer');
@@ -67,12 +70,61 @@ function initializeGame() {
 }
 
 /**
+ * Set up responsive canvas sizing
+ */
+function setupCanvasSize() {
+    try {
+        // Get container size
+        const container = canvas.parentElement;
+        const containerWidth = container.clientWidth;
+        
+        // Calculate canvas size based on screen and container
+        let canvasWidth, canvasHeight;
+        
+        if (window.innerWidth <= 600) {
+            // Mobile: use most of screen width with 16:9 aspect ratio
+            canvasWidth = Math.min(containerWidth - 20, window.innerWidth - 30);
+            canvasHeight = Math.round(canvasWidth * 0.75); // 4:3 aspect ratio for mobile
+        } else if (window.innerWidth <= 900) {
+            // Tablet: slightly larger with same aspect ratio
+            canvasWidth = Math.min(containerWidth - 40, 600);
+            canvasHeight = Math.round(canvasWidth * 0.75);
+        } else {
+            // Desktop: original size or scaled
+            canvasWidth = 800;
+            canvasHeight = 600;
+        }
+        
+        // Ensure minimum size for playability
+        canvasWidth = Math.max(canvasWidth, 300);
+        canvasHeight = Math.max(canvasHeight, 225);
+        
+        // Set canvas internal dimensions
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+        
+        // Update CSS for proper display
+        canvas.style.width = canvasWidth + 'px';
+        canvas.style.height = canvasHeight + 'px';
+        
+        console.log(`Canvas size set to: ${canvasWidth}x${canvasHeight}`);
+        
+    } catch (error) {
+        console.error('Error setting up canvas size:', error);
+        // Fallback to default size
+        canvas.width = 800;
+        canvas.height = 600;
+    }
+}
+
+/**
  * Set up all event listeners for game interaction
  */
 function setupEventListeners() {
     try {
-        // Canvas click handler for bubble popping
+        // Canvas click and touch handlers for bubble popping
         canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('touchstart', handleCanvasTouch, { passive: false });
         canvas.addEventListener('contextmenu', (e) => e.preventDefault()); // Disable right-click menu
         
         // Button event listeners
@@ -142,13 +194,19 @@ function handleCanvasClick(event) {
         const clickX = event.clientX - rect.left;
         const clickY = event.clientY - rect.top;
         
-        console.log(`Click detected at (${clickX.toFixed(1)}, ${clickY.toFixed(1)})`);
+        // Scale coordinates if canvas is scaled
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const scaledX = clickX * scaleX;
+        const scaledY = clickY * scaleY;
+        
+        console.log(`Click detected at (${scaledX.toFixed(1)}, ${scaledY.toFixed(1)})`);
         
         // Check if click hit any bubble (reverse order for front-to-back priority)
         for (let i = gameState.bubbles.length - 1; i >= 0; i--) {
             const bubble = gameState.bubbles[i];
             
-            if (bubble.containsPoint(clickX, clickY)) {
+            if (bubble.containsPoint(scaledX, scaledY)) {
                 // Bubble hit! Process the pop
                 processBubblePop(bubble, i);
                 break; // Only pop one bubble per click
@@ -157,6 +215,53 @@ function handleCanvasClick(event) {
         
     } catch (error) {
         console.error('Error handling canvas click:', error);
+    }
+}
+
+/**
+ * Handle touch events on canvas (mobile support)
+ * @param {TouchEvent} event - Touch event object
+ */
+function handleCanvasTouch(event) {
+    try {
+        // Prevent default touch behavior (scrolling, zooming)
+        event.preventDefault();
+        
+        if (!gameState || !gameState.gameRunning) {
+            console.log('Touch ignored - game not running');
+            return;
+        }
+        
+        // Get first touch point
+        const touch = event.touches[0] || event.changedTouches[0];
+        if (!touch) return;
+        
+        // Get touch coordinates relative to canvas
+        const rect = canvas.getBoundingClientRect();
+        const touchX = touch.clientX - rect.left;
+        const touchY = touch.clientY - rect.top;
+        
+        // Scale coordinates if canvas is scaled
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        const scaledX = touchX * scaleX;
+        const scaledY = touchY * scaleY;
+        
+        console.log(`Touch detected at (${scaledX.toFixed(1)}, ${scaledY.toFixed(1)})`);
+        
+        // Check if touch hit any bubble (reverse order for front-to-back priority)
+        for (let i = gameState.bubbles.length - 1; i >= 0; i--) {
+            const bubble = gameState.bubbles[i];
+            
+            if (bubble.containsPoint(scaledX, scaledY)) {
+                // Bubble hit! Process the pop
+                processBubblePop(bubble, i);
+                break; // Only pop one bubble per touch
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error handling canvas touch:', error);
     }
 }
 
@@ -642,8 +747,17 @@ function clearGameOverlays() {
  */
 function handleResize() {
     try {
-        // Could implement responsive canvas resizing here
-        console.log('Window resized');
+        // Responsive canvas resizing on window resize/orientation change
+        console.log('Window resized, updating canvas size');
+        
+        if (canvas && ctx) {
+            setupCanvasSize();
+            
+            // If game is running, redraw current frame
+            if (gameState && gameState.gameRunning) {
+                drawGame();
+            }
+        }
     } catch (error) {
         console.error('Error handling resize:', error);
     }

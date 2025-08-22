@@ -16,11 +16,17 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    min-height: 100dvh; /* Dynamic viewport height for mobile */
     display: flex;
     flex-direction: column;
     align-items: center;
     color: white;
     user-select: none; /* Prevent text selection during gameplay */
+    -webkit-user-select: none; /* Safari */
+    -webkit-touch-callout: none; /* Disable iOS callout */
+    -webkit-tap-highlight-color: transparent; /* Remove tap highlight */
+    touch-action: manipulation; /* Optimize touch handling */
+    overflow-x: hidden; /* Prevent horizontal scroll */
 }
 
 /* Main Game Container */
@@ -70,6 +76,10 @@ canvas {
     display: block;
     margin: 0 auto;
     transition: box-shadow 0.3s ease;
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    max-width: 100%;
+    height: auto;
 }
 
 canvas:hover {
@@ -209,13 +219,56 @@ canvas:hover {
 }
 
 @media (max-width: 600px) {
+    body {
+        padding: 5px;
+    }
+    
+    .game-container {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .game-header {
+        gap: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .score-display, .timer-display, .level-display {
+        font-size: 12px;
+        padding: 6px 12px;
+        min-width: 80px;
+    }
+    
+    canvas {
+        border-width: 2px;
+        border-radius: 8px;
+    }
+    
+    .start-button, .restart-button {
+        padding: 15px 25px; /* Larger touch targets */
+        font-size: 16px;
+        min-height: 44px; /* iOS minimum touch target */
+        margin: 10px 5px;
+    }
+    
     .level-complete, .game-over {
-        font-size: 20px;
-        padding: 20px 30px;
+        font-size: 18px;
+        padding: 15px 25px;
+        max-width: 90vw;
     }
     
     .game-info {
-        font-size: 12px;
+        font-size: 11px;
+        padding: 10px;
+    }
+    
+    .game-info p {
+        margin-bottom: 8px;
+    }
+    
+    .accessibility-info {
+        font-size: 10px !important;
+        margin-top: 5px !important;
     }
 }
 

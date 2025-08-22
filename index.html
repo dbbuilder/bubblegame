@@ -2,10 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="description" content="Bubble Pop Game - A fun web-based game with progressive difficulty and sound effects">
-    <meta name="keywords" content="bubble game, web game, javascript game, popping bubbles">
+    <meta name="keywords" content="bubble game, web game, javascript game, popping bubbles, mobile game">
     <meta name="author" content="Bubble Game Developer">
+    
+    <!-- Mobile app meta tags -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bubble Pop">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="msapplication-TileColor" content="#1a1a2e">
     
     <title>Bubble Pop Game - Progressive Bubble Popping Fun</title>
     
@@ -54,10 +62,9 @@
         <main role="main">
             <canvas 
                 id="gameCanvas" 
-                width="800" 
-                height="600"
                 aria-label="Game canvas - click on bubbles to pop them"
-                role="img">
+                role="img"
+                touch-action="manipulation">
                 Your browser does not support the HTML5 Canvas element required for this game.
                 Please update your browser or try a different one.
             </canvas>

@@ -71,17 +71,25 @@ class AudioManager {
         try {
             console.log('Attempting to initialize Web Audio API...');
             
-            // Create audio context
+            // Create audio context with iOS compatibility
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
-            // Check if context is suspended and resume if needed
-            if (this.audioContext.state === 'suspended') {
+            // iOS specific: Always try to resume context
+            if (this.audioContext.state !== 'running') {
+                console.log(`Audio context state: ${this.audioContext.state}, attempting to resume...`);
                 await this.audioContext.resume();
+                
+                // Wait a moment for context to start
+                await new Promise(resolve => setTimeout(resolve, 100));
             }
+            
+            // Create a silent buffer to initialize iOS audio
+            this.createSilentBuffer();
             
             this.initialized = true;
             console.log('Web Audio API initialized successfully');
             console.log(`Sample rate: ${this.audioContext.sampleRate}Hz`);
+            console.log(`Audio context state: ${this.audioContext.state}`);
             
             return true;
             
@@ -89,6 +97,26 @@ class AudioManager {
             console.warn('Failed to initialize Web Audio API:', error);
             this.initialized = false;
             return false;
+        }
+    }
+
+    /**
+     * Create silent buffer to initialize iOS audio
+     */
+    createSilentBuffer() {
+        try {
+            if (!this.audioContext) return;
+            
+            // Create a very short silent buffer
+            const buffer = this.audioContext.createBuffer(1, 1, this.audioContext.sampleRate);
+            const source = this.audioContext.createBufferSource();
+            source.buffer = buffer;
+            source.connect(this.audioContext.destination);
+            source.start(0);
+            
+            console.log('Silent buffer created for iOS audio initialization');
+        } catch (error) {
+            console.warn('Could not create silent buffer:', error);
         }
     }
 
@@ -177,46 +205,80 @@ class AudioManager {
             
             console.log(`Announcing letter: ${letter}`);
             
+            // iOS workaround: Check if voices are loaded
+            let voices = speechSynthesis.getVoices();
+            if (voices.length === 0) {
+                // Wait for voices to load on iOS
+                setTimeout(() => this.announceLetter(letter), 100);
+                return;
+            }
+            
             // Create speech utterance
             const utterance = new SpeechSynthesisUtterance(letter);
             
-            // Configure speech parameters
-            utterance.rate = 1.0; // Normal speed for clarity
+            // Configure speech parameters for mobile compatibility
+            utterance.rate = 0.9; // Slightly slower for clarity on mobile
             utterance.pitch = 1.0; // Normal pitch
-            utterance.volume = 1.0; // Full volume - browser controls this
+            utterance.volume = 1.0; // Full volume
             
-            // Try to use a good voice if available
-            const voices = speechSynthesis.getVoices();
-            if (voices.length > 0) {
-                // Prefer English voices, then local voices, then any voice
-                const preferredVoice = voices.find(voice => 
+            // iOS/mobile voice selection
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            let preferredVoice = null;
+            
+            if (isIOS) {
+                // iOS: prefer system voices
+                preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.default
+                ) || voices.find(voice => 
+                    voice.localService && voice.lang.startsWith('en')
+                );
+            } else {
+                // Android/other: prefer local English voices
+                preferredVoice = voices.find(voice => 
                     voice.lang.startsWith('en') && voice.localService
                 ) || voices.find(voice => 
                     voice.lang.startsWith('en')
-                ) || voices.find(voice => 
-                    voice.localService
-                ) || voices[0];
-                
-                if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                    console.log(`Using voice: ${preferredVoice.name}`);
-                }
+                );
             }
             
-            // Add error handling for speech
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+                console.log(`Using voice: ${preferredVoice.name} (${preferredVoice.lang})`);
+            } else {
+                console.log('Using default voice');
+            }
+            
+            // Enhanced error handling for mobile
             utterance.onerror = (event) => {
                 console.error('Speech synthesis error:', event.error);
+                // iOS fallback: try again with different voice
+                if (isIOS && event.error === 'not-allowed') {
+                    console.log('Retrying speech synthesis for iOS...');
+                    setTimeout(() => {
+                        const fallbackUtterance = new SpeechSynthesisUtterance(letter);
+                        fallbackUtterance.rate = 1.0;
+                        fallbackUtterance.volume = 1.0;
+                        speechSynthesis.speak(fallbackUtterance);
+                    }, 100);
+                }
             };
             
             utterance.onend = () => {
                 console.log(`Finished announcing: ${letter}`);
             };
             
-            // Cancel any ongoing speech to avoid queuing
-            speechSynthesis.cancel();
+            utterance.onstart = () => {
+                console.log(`Started announcing: ${letter}`);
+            };
             
-            // Speak the letter
-            speechSynthesis.speak(utterance);
+            // Cancel any ongoing speech (iOS safe)
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                // Wait briefly before speaking on iOS
+                setTimeout(() => speechSynthesis.speak(utterance), isIOS ? 50 : 0);
+            } else {
+                speechSynthesis.speak(utterance);
+            }
             
         } catch (error) {
             console.error('Error announcing letter:', error);
