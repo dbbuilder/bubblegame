@@ -213,26 +213,63 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance - use context to avoid beeping issues
-            const speechText = `${letter.toUpperCase()}`;
-            console.log(`Attempting to speak: "${speechText}"`);
+            // Create speech utterance - iOS-specific handling
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            let speechText;
+            
+            if (isIOS) {
+                // iOS Safari has issues with single letters - use phonetic approach
+                const letterPhonetics = {
+                    'A': 'ay', 'B': 'bee', 'C': 'see', 'D': 'dee', 'E': 'eee',
+                    'F': 'eff', 'G': 'gee', 'H': 'aitch', 'I': 'eye', 'J': 'jay',
+                    'K': 'kay', 'L': 'ell', 'M': 'em', 'N': 'en', 'O': 'oh',
+                    'P': 'pee', 'Q': 'cue', 'R': 'are', 'S': 'ess', 'T': 'tee',
+                    'U': 'you', 'V': 'vee', 'W': 'double you', 'X': 'ex', 'Y': 'why', 'Z': 'zee'
+                };
+                speechText = letterPhonetics[letter.toUpperCase()] || letter.toLowerCase();
+                console.log(`iOS - Attempting to speak phonetic: "${speechText}" for letter "${letter}"`);
+            } else {
+                // Desktop/Android - direct letter works fine
+                speechText = letter.toUpperCase();
+                console.log(`Desktop - Attempting to speak: "${speechText}"`);
+            }
+            
             const utterance = new SpeechSynthesisUtterance(speechText);
             
-            // Configure speech parameters for clear pronunciation and compatibility
-            utterance.rate = 1.0; // Normal rate - some engines have issues with slower rates
-            utterance.pitch = 1.0; // Normal pitch for better compatibility
-            utterance.volume = 0.9; // Nearly full volume for clarity
+            // Configure speech parameters - iOS-specific adjustments
+            if (isIOS) {
+                utterance.rate = 0.9; // Slightly slower for iOS clarity
+                utterance.pitch = 1.0; // Normal pitch
+                utterance.volume = 1.0; // Full volume on iOS
+            } else {
+                utterance.rate = 1.0; // Normal rate for desktop
+                utterance.pitch = 1.0; // Normal pitch
+                utterance.volume = 0.9; // Slightly lower for desktop
+            }
             
             // Simplified voice selection for reliability
             let preferredVoice = null;
             
             if (voices.length > 0) {
-                // Try to find a good English voice - prioritize local voices for reliability
-                preferredVoice = voices.find(voice => 
-                    voice.lang.startsWith('en') && voice.localService
-                ) || voices.find(voice => 
-                    voice.lang.startsWith('en')
-                ) || voices[0]; // Fallback to any voice
+                if (isIOS) {
+                    // iOS-specific voice selection - prefer system voices
+                    preferredVoice = voices.find(voice => 
+                        voice.lang.startsWith('en') && voice.default
+                    ) || voices.find(voice => 
+                        voice.name.toLowerCase().includes('samantha')
+                    ) || voices.find(voice => 
+                        voice.lang.startsWith('en') && voice.localService
+                    ) || voices.find(voice => 
+                        voice.lang.startsWith('en')
+                    ) || voices[0];
+                } else {
+                    // Desktop/Android - prioritize local voices for reliability
+                    preferredVoice = voices.find(voice => 
+                        voice.lang.startsWith('en') && voice.localService
+                    ) || voices.find(voice => 
+                        voice.lang.startsWith('en')
+                    ) || voices[0];
+                }
             }
             
             if (preferredVoice) {
@@ -276,17 +313,19 @@ class AudioManager {
                 console.log(`📍 Speech boundary: ${event.name} at ${event.charIndex}`);
             };
             
-            // Cancel any ongoing speech and speak new utterance
+            // Cancel any ongoing speech and speak new utterance - iOS-specific timing
             speechSynthesis.cancel();
             
-            // Brief delay to ensure cancel completes, then speak
+            // iOS needs longer delay to properly cancel previous speech
+            const delay = isIOS ? 200 : 100;
             setTimeout(() => {
                 try {
+                    console.log(`🚀 Speaking now: "${speechText}" (${isIOS ? 'iOS' : 'Desktop'})`);
                     speechSynthesis.speak(utterance);
                 } catch (error) {
                     console.error('Error speaking utterance:', error);
                 }
-            }, 100);
+            }, delay);
             
         } catch (error) {
             console.error('Error announcing letter:', error);

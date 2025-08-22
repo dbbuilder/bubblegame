@@ -60,7 +60,7 @@ function initializeGame() {
         // Initial UI update
         updateUI();
         
-        console.log('🎮 Bubble Game v2.4 - Debugging Speech Issues');
+        console.log('🎮 Bubble Game v2.5 - iOS Speech Fix');
         console.log('Game initialization completed successfully');
         console.log(`Canvas size: ${canvas.width}x${canvas.height}`);
         
