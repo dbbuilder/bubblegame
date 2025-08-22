@@ -213,28 +213,44 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance
-            const utterance = new SpeechSynthesisUtterance(letter);
+            // Create speech utterance with lowercase to avoid "Capital F" issue
+            const speechText = letter.toLowerCase();
+            const utterance = new SpeechSynthesisUtterance(speechText);
             
-            // Configure speech parameters for mobile compatibility
-            utterance.rate = 0.9; // Slightly slower for clarity on mobile
-            utterance.pitch = 1.0; // Normal pitch
-            utterance.volume = 1.0; // Full volume
+            // Configure speech parameters for gentle, clear pronunciation
+            utterance.rate = 0.8; // Slower for gentleness and clarity
+            utterance.pitch = 1.1; // Slightly higher pitch for softer sound
+            utterance.volume = 0.8; // Slightly quieter for gentleness
             
-            // iOS/mobile voice selection
+            // Enhanced voice selection for gentle female voices
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             let preferredVoice = null;
             
+            // Look for female voices with gentle characteristics
+            const femaleVoiceKeywords = ['female', 'woman', 'samantha', 'alex', 'victoria', 'karen', 'susan', 'allison', 'ava', 'susan', 'veena', 'tessa'];
+            const gentleVoiceKeywords = ['premium', 'enhanced', 'natural', 'neural'];
+            
             if (isIOS) {
-                // iOS: prefer system voices
+                // iOS: look for specific gentle female voices
                 preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && 
+                    femaleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword))
+                ) || voices.find(voice => 
                     voice.lang.startsWith('en') && voice.default
                 ) || voices.find(voice => 
                     voice.localService && voice.lang.startsWith('en')
                 );
             } else {
-                // Android/other: prefer local English voices
+                // Android/Desktop: prefer female Google voices or other gentle options
                 preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && 
+                    (voice.name.toLowerCase().includes('female') || 
+                     voice.name.toLowerCase().includes('woman') ||
+                     femaleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword)))
+                ) || voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.localService &&
+                    gentleVoiceKeywords.some(keyword => voice.name.toLowerCase().includes(keyword))
+                ) || voices.find(voice => 
                     voice.lang.startsWith('en') && voice.localService
                 ) || voices.find(voice => 
                     voice.lang.startsWith('en')
@@ -255,9 +271,10 @@ class AudioManager {
                 if (isIOS && event.error === 'not-allowed') {
                     console.log('Retrying speech synthesis for iOS...');
                     setTimeout(() => {
-                        const fallbackUtterance = new SpeechSynthesisUtterance(letter);
-                        fallbackUtterance.rate = 1.0;
-                        fallbackUtterance.volume = 1.0;
+                        const fallbackUtterance = new SpeechSynthesisUtterance(letter.toLowerCase());
+                        fallbackUtterance.rate = 0.8;
+                        fallbackUtterance.pitch = 1.1;
+                        fallbackUtterance.volume = 0.8;
                         speechSynthesis.speak(fallbackUtterance);
                     }, 100);
                 }

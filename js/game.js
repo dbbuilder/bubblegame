@@ -826,6 +826,40 @@ window.testSpeechDirect = function(text = 'A') {
     }
 };
 
+// List available voices for debugging
+window.listVoices = function() {
+    if ('speechSynthesis' in window) {
+        const voices = speechSynthesis.getVoices();
+        console.log('Available voices:');
+        voices.forEach((voice, index) => {
+            console.log(`${index}: ${voice.name} (${voice.lang}) - Local: ${voice.localService}, Default: ${voice.default}`);
+        });
+        return voices;
+    } else {
+        console.error('Speech synthesis not supported');
+        return [];
+    }
+};
+
+// Test specific voice by name
+window.testVoice = function(voiceName, text = 'hello') {
+    if ('speechSynthesis' in window) {
+        const voices = speechSynthesis.getVoices();
+        const voice = voices.find(v => v.name.toLowerCase().includes(voiceName.toLowerCase()));
+        if (voice) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.voice = voice;
+            utterance.rate = 0.8;
+            utterance.pitch = 1.1;
+            utterance.volume = 0.8;
+            speechSynthesis.speak(utterance);
+            console.log(`Testing voice: ${voice.name}`);
+        } else {
+            console.error(`Voice containing "${voiceName}" not found`);
+        }
+    }
+};
+
 // Make game functions available globally for console debugging
 window.gameState = () => gameState;
 window.audioManager = () => audioManager;
