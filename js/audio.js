@@ -223,7 +223,6 @@ class AudioManager {
             utterance.volume = 0.9; // Nearly full volume for clarity
             
             // Simplified voice selection for reliability
-            const voices = speechSynthesis.getVoices();
             let preferredVoice = null;
             
             if (voices.length > 0) {

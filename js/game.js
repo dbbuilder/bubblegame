@@ -60,7 +60,7 @@ function initializeGame() {
         // Initial UI update
         updateUI();
         
-        console.log('🎮 Bubble Game v2.2 - Fixed speech synthesis & full-screen mobile');
+        console.log('🎮 Bubble Game v2.3 - Hotfix: Game initialization restored');
         console.log('Game initialization completed successfully');
         console.log(`Canvas size: ${canvas.width}x${canvas.height}`);
         
