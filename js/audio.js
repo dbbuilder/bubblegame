@@ -10,6 +10,9 @@ class AudioManager {
         this.initialized = false;
         this.masterVolume = 0.3; // Overall volume control
         this.soundQueue = []; // Queue for sound effects
+        this.speechEnabled = 'speechSynthesis' in window; // Check for speech support
+        this.voicesLoaded = false;
+        this.setupSpeechSynthesis();
         
         // Sound configuration
         this.sounds = {
@@ -28,6 +31,36 @@ class AudioManager {
         };
         
         console.log('AudioManager created (not yet initialized)');
+    }
+
+    /**
+     * Setup speech synthesis and wait for voices to load
+     */
+    setupSpeechSynthesis() {
+        if (!this.speechEnabled) return;
+        
+        // Load voices if not already loaded
+        const loadVoices = () => {
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                this.voicesLoaded = true;
+                console.log(`Speech synthesis ready with ${voices.length} voices`);
+            }
+        };
+        
+        // Try to load voices immediately
+        loadVoices();
+        
+        // Listen for voices changed event (some browsers need this)
+        speechSynthesis.addEventListener('voiceschanged', loadVoices);
+        
+        // Fallback timeout to enable speech even if voices don't load properly
+        setTimeout(() => {
+            if (!this.voicesLoaded) {
+                console.warn('Speech voices not loaded, enabling speech anyway');
+                this.voicesLoaded = true;
+            }
+        }, 1000);
     }
 
     /**
@@ -122,6 +155,71 @@ class AudioManager {
             this.playPopSound(config.frequency, config.duration, config.type);
         } catch (error) {
             console.error('Error playing gold bubble pop:', error);
+        }
+    }
+
+    /**
+     * Announce letter name using speech synthesis
+     * @param {string} letter - Letter to announce
+     */
+    announceLetter(letter) {
+        try {
+            if (!this.speechEnabled) {
+                console.warn('Speech synthesis not supported');
+                return;
+            }
+            
+            // Skip if muted
+            if (this.masterVolume === 0) {
+                console.log('Audio muted, skipping speech');
+                return;
+            }
+            
+            console.log(`Announcing letter: ${letter}`);
+            
+            // Create speech utterance
+            const utterance = new SpeechSynthesisUtterance(letter);
+            
+            // Configure speech parameters
+            utterance.rate = 1.0; // Normal speed for clarity
+            utterance.pitch = 1.0; // Normal pitch
+            utterance.volume = 1.0; // Full volume - browser controls this
+            
+            // Try to use a good voice if available
+            const voices = speechSynthesis.getVoices();
+            if (voices.length > 0) {
+                // Prefer English voices, then local voices, then any voice
+                const preferredVoice = voices.find(voice => 
+                    voice.lang.startsWith('en') && voice.localService
+                ) || voices.find(voice => 
+                    voice.lang.startsWith('en')
+                ) || voices.find(voice => 
+                    voice.localService
+                ) || voices[0];
+                
+                if (preferredVoice) {
+                    utterance.voice = preferredVoice;
+                    console.log(`Using voice: ${preferredVoice.name}`);
+                }
+            }
+            
+            // Add error handling for speech
+            utterance.onerror = (event) => {
+                console.error('Speech synthesis error:', event.error);
+            };
+            
+            utterance.onend = () => {
+                console.log(`Finished announcing: ${letter}`);
+            };
+            
+            // Cancel any ongoing speech to avoid queuing
+            speechSynthesis.cancel();
+            
+            // Speak the letter
+            speechSynthesis.speak(utterance);
+            
+        } catch (error) {
+            console.error('Error announcing letter:', error);
         }
     }
 

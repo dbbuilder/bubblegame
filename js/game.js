@@ -167,7 +167,7 @@ function handleCanvasClick(event) {
  */
 function processBubblePop(bubble, index) {
     try {
-        console.log(`Bubble popped! Type: ${bubble.isGold ? 'gold' : bubble.color}, Points: ${bubble.points}`);
+        console.log(`Bubble popped! Letter: ${bubble.letter}, Type: ${bubble.isGold ? 'gold' : bubble.color}, Points: ${bubble.points}`);
         
         // Add score to game state
         gameState.addScore(bubble.points);
@@ -179,6 +179,11 @@ function processBubblePop(bubble, index) {
             } else {
                 audioManager.playBubblePop();
             }
+        }
+        
+        // Announce the letter on the bubble
+        if (audioManager && bubble.letter) {
+            audioManager.announceLetter(bubble.letter);
         }
         
         // Remove bubble from array
@@ -258,6 +263,15 @@ async function startGame() {
             } else {
                 console.warn('Audio system failed to initialize - game will run without sound');
             }
+        }
+        
+        // Test speech synthesis with user interaction
+        if (audioManager && audioManager.speechEnabled) {
+            // Use a silent utterance to "warm up" speech synthesis
+            const testUtterance = new SpeechSynthesisUtterance(' ');
+            testUtterance.volume = 0.01;
+            speechSynthesis.speak(testUtterance);
+            console.log('Speech synthesis initialized with user interaction');
         }
         
         // Reset game state
@@ -673,6 +687,30 @@ window.addEventListener('beforeunload', handleUnload);
 
 // Global debug function
 window.toggleDebug = toggleDebugMode;
+
+// Test speech synthesis function
+window.testSpeech = function(letter = 'A') {
+    console.log('Testing speech synthesis...');
+    if (audioManager) {
+        audioManager.announceLetter(letter);
+    } else {
+        console.error('AudioManager not initialized');
+    }
+};
+
+// Test speech synthesis directly
+window.testSpeechDirect = function(text = 'A') {
+    console.log('Testing speech synthesis directly...');
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.volume = 1.0;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+        speechSynthesis.speak(utterance);
+    } else {
+        console.error('Speech synthesis not supported');
+    }
+};
 
 // Make game functions available globally for console debugging
 window.gameState = () => gameState;

@@ -15,6 +15,7 @@ class Bubble {
             this.isGold = isGold;
             this.speed = this.calculateInitialSpeed();
             this.points = isGold ? 5 : 1;
+            this.letter = this.generateRandomLetter();
             
             // Visual effect properties
             this.opacity = 0.85;
@@ -74,6 +75,20 @@ class Bubble {
     }
 
     /**
+     * Generate random letter for bubble
+     * @returns {string} Random letter A-Z
+     */
+    generateRandomLetter() {
+        try {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            return letters[Math.floor(Math.random() * letters.length)];
+        } catch (error) {
+            console.error('Error generating letter:', error);
+            return 'A'; // Default fallback
+        }
+    }
+
+    /**
      * Generate unique identifier for bubble tracking
      * @returns {string} Unique bubble ID
      */
@@ -121,6 +136,9 @@ class Bubble {
             
             // Draw highlight for glossy effect
             this.drawHighlight(ctx);
+            
+            // Draw letter on bubble
+            this.drawLetter(ctx);
             
             // Restore context state
             ctx.restore();
@@ -245,6 +263,32 @@ class Bubble {
     }
 
     /**
+     * Draw letter on bubble
+     * @param {CanvasRenderingContext2D} ctx - Canvas rendering context
+     */
+    drawLetter(ctx) {
+        try {
+            ctx.globalAlpha = 1.0;
+            ctx.fillStyle = this.isGold ? '#8B4513' : '#000000'; // Brown for gold, black for regular
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 2;
+            
+            // Calculate font size based on bubble radius
+            const fontSize = Math.max(this.radius * 0.8, 16);
+            ctx.font = `bold ${fontSize}px Arial, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            // Draw text with outline for better visibility
+            ctx.strokeText(this.letter, this.x, this.y);
+            ctx.fillText(this.letter, this.x, this.y);
+            
+        } catch (error) {
+            console.error('Error drawing letter on bubble:', error);
+        }
+    }
+
+    /**
      * Check if point is inside bubble (for click detection)
      * @param {number} x - X coordinate to test
      * @param {number} y - Y coordinate to test
@@ -319,6 +363,7 @@ class Bubble {
             position: { x: this.x, y: this.y },
             radius: this.radius,
             color: this.color,
+            letter: this.letter,
             isGold: this.isGold,
             speed: this.speed,
             points: this.points,
