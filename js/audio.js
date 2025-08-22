@@ -284,18 +284,18 @@ class AudioManager {
                 return;
             }
             
-            // Create speech utterance - Chrome iOS needs sentence context
+            // Create speech utterance - use lowercase to avoid "capital" prefix
             const isChrome = navigator.userAgent.includes('Chrome');
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             
             let speechText;
             if (isChrome && isIOS) {
                 // Chrome on iOS - use full sentence approach to force speech
-                speechText = `The letter ${letter.toUpperCase()}`;
+                speechText = `The letter ${letter.toLowerCase()}`;
                 console.log(`Chrome iOS - Speaking sentence: "${speechText}"`);
             } else {
-                // Other browsers - direct letter
-                speechText = letter.toUpperCase();
+                // Other browsers - direct letter (lowercase to avoid "capital")
+                speechText = letter.toLowerCase();
                 console.log(`Other browser - Speaking letter: "${speechText}"`);
             }
             
@@ -450,7 +450,7 @@ class AudioManager {
             
             console.log(`Using basic speech synthesis for letter: ${letter}`);
             
-            const utterance = new SpeechSynthesisUtterance(letter.toUpperCase());
+            const utterance = new SpeechSynthesisUtterance(letter.toLowerCase());
             utterance.rate = 1.0;
             utterance.pitch = 1.0;
             utterance.volume = 1.0;

@@ -26,14 +26,14 @@
     <meta http-equiv="Expires" content="0">
     
     <!-- Preload critical resources -->
-    <link rel="preload" href="css/styles.css?v=2.10" as="style">
-    <link rel="preload" href="js/gamestate.js?v=2.10" as="script">
-    <link rel="preload" href="js/bubble.js?v=2.10" as="script">
-    <link rel="preload" href="js/audio.js?v=2.10" as="script">
-    <link rel="preload" href="js/game.js?v=2.10" as="script">
+    <link rel="preload" href="css/styles.css?v=2.11" as="style">
+    <link rel="preload" href="js/gamestate.js?v=2.11" as="script">
+    <link rel="preload" href="js/bubble.js?v=2.11" as="script">
+    <link rel="preload" href="js/audio.js?v=2.11" as="script">
+    <link rel="preload" href="js/game.js?v=2.11" as="script">
     
     <!-- Stylesheets -->
-    <link rel="stylesheet" href="css/styles.css?v=2.10">
+    <link rel="stylesheet" href="css/styles.css?v=2.11">
     
     <!-- Open Graph meta tags for social sharing -->
     <meta property="og:title" content="Bubble Pop Game">
@@ -83,7 +83,7 @@
             </div>
             
             <p style="font-size: 12px; opacity: 0.7; margin-top: 20px;">
-                v2.10 - Enhanced Audio Setup for Chrome iOS
+                v2.11 - Fixed "Capital" Speech Issue
             </p>
         </div>
     </div>
@@ -92,7 +92,7 @@
     <div class="game-container" id="gameContainer" style="display: none;">
         <!-- Version indicator -->
         <div style="text-align: center; margin-bottom: 10px; color: #FFD700; font-weight: bold; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 5px 10px; font-size: 14px;">
-            🎮 Bubble Game v2.10 - Audio Setup & Chrome iOS Compatibility
+            🎮 Bubble Game v2.11 - Fixed "Capital C" Issue (Now Says Just "C")
         </div>
 
         <!-- Game header with score, timer, and level display -->
@@ -160,7 +160,7 @@
             <p>This game requires mouse/touch input and includes sound effects and speech synthesis. 
             Visual indicators show score and progress. Letters are announced when bubbles are popped.</p>
             <p style="font-size: 10px; margin-top: 5px; color: #FFD700;">
-                🎵 v2.10 - Audio Setup: Required user interaction to properly initialize speech synthesis • 
+                🎵 v2.11 - Fixed "Capital" Issue: Now says "c" instead of "capital c" • 
                 <span id="refresh-hint" style="cursor: pointer;" onclick="location.reload(true)">
                     Click here to refresh if needed
                 </span>
@@ -189,10 +189,10 @@
     </noscript>
     
     <!-- JavaScript files - loaded in dependency order with cache busting -->
-    <script src="js/gamestate.js?v=2.10" defer></script>
-    <script src="js/bubble.js?v=2.10" defer></script>
-    <script src="js/audio.js?v=2.10" defer></script>
-    <script src="js/game.js?v=2.10" defer></script>
+    <script src="js/gamestate.js?v=2.11" defer></script>
+    <script src="js/bubble.js?v=2.11" defer></script>
+    <script src="js/audio.js?v=2.11" defer></script>
+    <script src="js/game.js?v=2.11" defer></script>
     
     <!-- Audio Setup Handler -->
     <script>
@@ -275,7 +275,7 @@
                     progressBar.style.width = '60%';
                     
                     // Create test utterance
-                    const testText = 'ay'; // Test with phonetic "A"
+                    const testText = 'a'; // Test with lowercase "a" to avoid "capital" prefix
                     const utterance = new SpeechSynthesisUtterance(testText);
                     utterance.rate = 0.8;
                     utterance.pitch = 1.0;
