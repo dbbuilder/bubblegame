@@ -119,10 +119,12 @@ class AudioManager {
             
             // Use different strategies based on browser
             if (isChromeIOS) {
-                this.useToneMode = true; // Use Web Audio tones instead of speech
+                this.useMagicalMode = true; // Use magical tone BEFORE speech for Chrome iOS
                 this.usePhoneticMode = false;
-                console.log('✅ Tone mode enabled for Chrome iOS (no more speech beeping!)');
+                this.useToneMode = false;
+                console.log('✅ Magical mode enabled for Chrome iOS (chime + letter speech for learning!)');
             } else {
+                this.useMagicalMode = false;
                 this.useToneMode = false;
                 this.usePhoneticMode = false; // Use regular speech synthesis
                 console.log('✅ Standard speech synthesis mode enabled');
@@ -276,7 +278,13 @@ class AudioManager {
             
             console.log(`Announcing letter: ${letter}`);
             
-            // Use tone mode for Chrome iOS (no speech beeping!)
+            // Use magical mode for Chrome iOS (magical chime + letter speech for learning!)
+            if (this.useMagicalMode) {
+                this.playMagicalLetterAnnouncement(letter.toUpperCase());
+                return;
+            }
+            
+            // Use tone mode only as fallback (removed for educational purposes)
             if (this.useToneMode && this.letterTones[letter.toUpperCase()]) {
                 this.playLetterTone(letter.toUpperCase());
                 return;
@@ -403,6 +411,160 @@ class AudioManager {
             
         } catch (error) {
             console.error('Error announcing letter:', error);
+        }
+    }
+
+    /**
+     * Play magical chime followed by spoken letter (educational + magical!)
+     * @param {string} letter - Letter to announce (A-Z)
+     */
+    async playMagicalLetterAnnouncement(letter) {
+        try {
+            console.log(`✨ Playing magical announcement for letter: ${letter}`);
+            
+            // First, play a magical chime tone
+            await this.playMagicalChime(letter);
+            
+            // Then, after a short pause, speak the letter
+            setTimeout(() => {
+                this.speakLetterAfterChime(letter);
+            }, 400); // 400ms delay after chime
+            
+        } catch (error) {
+            console.error('Error in magical letter announcement:', error);
+            // Fallback to regular speech
+            this.fallbackToSpeechSynthesis(letter);
+        }
+    }
+
+    /**
+     * Play a magical chime sound using Web Audio API
+     * @param {string} letter - Letter for chime frequency
+     */
+    async playMagicalChime(letter) {
+        return new Promise((resolve) => {
+            try {
+                if (!this.initialized || !this.audioContext) {
+                    console.warn('Audio context not initialized for magical chime');
+                    resolve();
+                    return;
+                }
+                
+                const baseFrequency = this.letterTones[letter] || 440;
+                console.log(`🔔 Playing magical chime for ${letter}: ${baseFrequency}Hz`);
+                
+                // Create a beautiful bell-like chime with harmonics
+                const now = this.audioContext.currentTime;
+                const duration = 0.3;
+                
+                // Create multiple oscillators for a rich, magical sound
+                const oscillators = [];
+                const gainNodes = [];
+                
+                // Fundamental frequency + harmonics for magical bell sound
+                const frequencies = [
+                    baseFrequency,           // Fundamental
+                    baseFrequency * 2,       // Octave
+                    baseFrequency * 3,       // Fifth
+                ];
+                
+                const volumes = [0.3, 0.15, 0.1]; // Decreasing volumes for harmonics
+                
+                frequencies.forEach((freq, index) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    
+                    osc.frequency.setValueAtTime(freq, now);
+                    osc.type = 'sine'; // Pure sine waves for bell-like quality
+                    
+                    // Create a bell-like envelope
+                    const vol = this.masterVolume * volumes[index];
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(vol, now + 0.01); // Quick attack
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + duration); // Long decay
+                    
+                    osc.start(now);
+                    osc.stop(now + duration);
+                    
+                    oscillators.push(osc);
+                    gainNodes.push(gain);
+                });
+                
+                // Resolve promise when chime is done
+                setTimeout(() => {
+                    console.log(`✅ Magical chime completed for: ${letter}`);
+                    resolve();
+                }, duration * 1000);
+                
+            } catch (error) {
+                console.error('Error playing magical chime:', error);
+                resolve();
+            }
+        });
+    }
+
+    /**
+     * Speak letter after magical chime with improved Chrome iOS compatibility
+     * @param {string} letter - Letter to speak (A-Z)
+     */
+    speakLetterAfterChime(letter) {
+        try {
+            if (!this.speechEnabled) {
+                console.warn('Speech synthesis not available after chime');
+                return;
+            }
+            
+            console.log(`🗣️ Speaking letter after chime: ${letter}`);
+            
+            // Create speech utterance with lowercase to avoid "capital"
+            const speechText = letter.toLowerCase();
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            utterance.rate = 0.9; // Slightly slower for clarity
+            utterance.pitch = 1.1; // Slightly higher pitch for child-friendly sound
+            utterance.volume = 1.0;
+            
+            // Find best voice
+            const voices = speechSynthesis.getVoices();
+            const preferredVoice = voices.find(voice => 
+                voice.lang.startsWith('en') && voice.localService
+            ) || voices.find(voice => 
+                voice.lang.startsWith('en')
+            ) || voices[0];
+            
+            if (preferredVoice) {
+                utterance.voice = preferredVoice;
+                console.log(`Using voice: ${preferredVoice.name} for post-chime speech`);
+            }
+            
+            // Error handling
+            utterance.onerror = (event) => {
+                console.error('Post-chime speech error:', event.error);
+            };
+            
+            utterance.onend = () => {
+                console.log(`✅ Magical letter announcement completed: ${letter}`);
+            };
+            
+            // Cancel any ongoing speech and speak with extended delay for Chrome iOS
+            speechSynthesis.cancel();
+            setTimeout(() => {
+                try {
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel();
+                        setTimeout(() => speechSynthesis.speak(utterance), 200);
+                    } else {
+                        speechSynthesis.speak(utterance);
+                    }
+                } catch (error) {
+                    console.error('Error speaking letter after chime:', error);
+                }
+            }, 300); // Longer delay for Chrome iOS stability
+            
+        } catch (error) {
+            console.error('Error in post-chime speech:', error);
         }
     }
 
