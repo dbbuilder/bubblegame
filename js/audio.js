@@ -362,15 +362,26 @@ class AudioManager {
             // Cancel any ongoing speech and speak new utterance
             speechSynthesis.cancel();
             
-            // Brief delay to ensure cancel completes, then speak
+            // Longer delay for Chrome iOS to prevent beeping
+            const delay = (navigator.userAgent.includes('Chrome') && /iPad|iPhone|iPod/.test(navigator.userAgent)) ? 300 : 100;
+            
             setTimeout(() => {
                 try {
-                    console.log(`🚀 Speaking now: "${speechText}"`);
-                    speechSynthesis.speak(utterance);
+                    // Double-check that speech is properly cancelled before speaking
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel();
+                        setTimeout(() => {
+                            console.log(`🚀 Speaking now: "${speechText}"`);
+                            speechSynthesis.speak(utterance);
+                        }, 100);
+                    } else {
+                        console.log(`🚀 Speaking now: "${speechText}"`);
+                        speechSynthesis.speak(utterance);
+                    }
                 } catch (error) {
                     console.error('Error speaking utterance:', error);
                 }
-            }, 100);
+            }, delay);
             
         } catch (error) {
             console.error('Error announcing letter:', error);
@@ -420,16 +431,26 @@ class AudioManager {
                 console.log(`✅ Phonetic speech completed for: ${letter}`);
             };
             
-            // Cancel any ongoing speech and speak
+            // Cancel any ongoing speech and speak - longer delay for Chrome iOS
             speechSynthesis.cancel();
+            
+            // Longer delay for Chrome iOS to prevent beeping
+            const delay = (navigator.userAgent.includes('Chrome') && /iPad|iPhone|iPod/.test(navigator.userAgent)) ? 300 : 100;
+            
             setTimeout(() => {
                 try {
-                    speechSynthesis.speak(utterance);
+                    // Double-check that speech is properly cancelled before speaking
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel();
+                        setTimeout(() => speechSynthesis.speak(utterance), 100);
+                    } else {
+                        speechSynthesis.speak(utterance);
+                    }
                 } catch (error) {
                     console.error('Error speaking phonetic utterance:', error);
                     this.fallbackToSpeechSynthesis(letter);
                 }
-            }, 100);
+            }, delay);
             
         } catch (error) {
             console.error('Error in phonetic speech:', error);
@@ -456,9 +477,19 @@ class AudioManager {
             utterance.volume = 1.0;
             
             speechSynthesis.cancel();
+            
+            // Longer delay for Chrome iOS to prevent beeping
+            const delay = (navigator.userAgent.includes('Chrome') && /iPad|iPhone|iPod/.test(navigator.userAgent)) ? 300 : 100;
+            
             setTimeout(() => {
-                speechSynthesis.speak(utterance);
-            }, 100);
+                // Double-check that speech is properly cancelled before speaking
+                if (speechSynthesis.speaking) {
+                    speechSynthesis.cancel();
+                    setTimeout(() => speechSynthesis.speak(utterance), 100);
+                } else {
+                    speechSynthesis.speak(utterance);
+                }
+            }, delay);
             
         } catch (error) {
             console.error('Error in speech synthesis fallback:', error);
