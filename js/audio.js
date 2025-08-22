@@ -87,19 +87,27 @@ class AudioManager {
     }
 
     /**
-     * Set up phonetic pronunciation system for Chrome iOS compatibility
+     * Set up letter audio system with Web Audio API tones for Chrome iOS
      */
     async preloadLetterAudioFiles() {
         try {
-            console.log('🎵 Setting up phonetic pronunciation system...');
+            console.log('🎵 Setting up letter audio system...');
             
-            // Create phonetic mapping for problematic browsers
+            // Create phonetic mapping for speech synthesis browsers
             this.phoneticMap = {
                 'A': 'ay', 'B': 'bee', 'C': 'see', 'D': 'dee', 'E': 'ee',
                 'F': 'eff', 'G': 'gee', 'H': 'aitch', 'I': 'eye', 'J': 'jay',
                 'K': 'kay', 'L': 'ell', 'M': 'em', 'N': 'en', 'O': 'oh',
                 'P': 'pee', 'Q': 'cue', 'R': 'arr', 'S': 'ess', 'T': 'tee',
                 'U': 'you', 'V': 'vee', 'W': 'double you', 'X': 'ex', 'Y': 'why', 'Z': 'zee'
+            };
+            
+            // Create distinctive tone mapping for each letter
+            this.letterTones = {
+                'A': 440, 'B': 466, 'C': 494, 'D': 523, 'E': 554, 'F': 587, 'G': 622,
+                'H': 659, 'I': 698, 'J': 740, 'K': 784, 'L': 831, 'M': 880, 'N': 932,
+                'O': 988, 'P': 1047, 'Q': 1109, 'R': 1175, 'S': 1245, 'T': 1319,
+                'U': 1397, 'V': 1480, 'W': 1568, 'X': 1661, 'Y': 1760, 'Z': 1865
             };
             
             // Detect Chrome on iOS
@@ -109,21 +117,25 @@ class AudioManager {
             
             console.log(`Browser detection: Chrome=${isChrome}, iOS=${isIOS}, ChromeIOS=${isChromeIOS}`);
             
-            // Enable phonetic mode for Chrome iOS
-            this.usePhoneticMode = isChromeIOS;
-            this.audioFilesEnabled = false; // Use speech synthesis with phonetic fallback
-            this.audioFilesLoaded = true; // Mark as "loaded" so the system is ready
-            
-            if (this.usePhoneticMode) {
-                console.log('✅ Phonetic mode enabled for Chrome iOS compatibility');
+            // Use different strategies based on browser
+            if (isChromeIOS) {
+                this.useToneMode = true; // Use Web Audio tones instead of speech
+                this.usePhoneticMode = false;
+                console.log('✅ Tone mode enabled for Chrome iOS (no more speech beeping!)');
             } else {
+                this.useToneMode = false;
+                this.usePhoneticMode = false; // Use regular speech synthesis
                 console.log('✅ Standard speech synthesis mode enabled');
             }
             
+            this.audioFilesEnabled = false;
+            this.audioFilesLoaded = true;
+            
         } catch (error) {
-            console.error('Error setting up phonetic system:', error);
+            console.error('Error setting up letter audio system:', error);
             this.audioFilesEnabled = false;
             this.usePhoneticMode = false;
+            this.useToneMode = false;
         }
     }
 
@@ -264,7 +276,13 @@ class AudioManager {
             
             console.log(`Announcing letter: ${letter}`);
             
-            // Use phonetic pronunciation for Chrome iOS
+            // Use tone mode for Chrome iOS (no speech beeping!)
+            if (this.useToneMode && this.letterTones[letter.toUpperCase()]) {
+                this.playLetterTone(letter.toUpperCase());
+                return;
+            }
+            
+            // Use phonetic pronunciation for other problematic browsers
             if (this.usePhoneticMode && this.phoneticMap[letter.toUpperCase()]) {
                 this.speakPhoneticLetter(letter.toUpperCase());
                 return;
@@ -385,6 +403,59 @@ class AudioManager {
             
         } catch (error) {
             console.error('Error announcing letter:', error);
+        }
+    }
+
+    /**
+     * Play distinctive tone for letter (Chrome iOS beep-free solution)
+     * @param {string} letter - Letter to play tone for (A-Z)
+     */
+    playLetterTone(letter) {
+        try {
+            if (!this.initialized || !this.audioContext) {
+                console.warn('Audio context not initialized for tone playback');
+                return;
+            }
+            
+            const frequency = this.letterTones[letter];
+            if (!frequency) {
+                console.warn(`No tone frequency for letter: ${letter}`);
+                return;
+            }
+            
+            console.log(`🎵 Playing tone for letter ${letter}: ${frequency}Hz`);
+            
+            // Create oscillator for the letter tone
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            // Connect audio nodes
+            oscillator.connect(gainNode);
+            gainNode.connect(this.audioContext.destination);
+            
+            // Configure oscillator with letter-specific frequency
+            oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+            oscillator.type = 'sine'; // Pure sine wave for clear tone
+            
+            // Create a pleasant envelope (attack, decay, sustain, release)
+            const now = this.audioContext.currentTime;
+            const duration = 0.3; // 300ms tone duration
+            
+            gainNode.gain.setValueAtTime(0, now);
+            gainNode.gain.linearRampToValueAtTime(this.masterVolume * 0.3, now + 0.05); // Quick attack
+            gainNode.gain.linearRampToValueAtTime(this.masterVolume * 0.2, now + 0.15); // Slight decay
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + duration); // Fade out
+            
+            // Start and stop oscillator
+            oscillator.start(now);
+            oscillator.stop(now + duration);
+            
+            console.log(`✅ Played tone for letter: ${letter}`);
+            
+        } catch (error) {
+            console.error('Error playing letter tone:', error);
+            // Fallback to speech synthesis if tone fails
+            this.fallbackToSpeechSynthesis(letter);
         }
     }
 
